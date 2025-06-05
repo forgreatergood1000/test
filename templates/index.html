@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Home - SAML Azure AD Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Hero Section -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-shield-alt text-primary me-3"></i>
+                SAML Azure AD Authentication
+            </h1>
+            <p class="lead text-muted">
+                Secure authentication with Azure Active Directory using SAML 2.0 and Amazon Cognito integration
+            </p>
+        </div>
+
+        {% if not session.get('saml_authenticated') %}
+        <!-- Login Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-center py-5">
+                <h3 class="card-title mb-4">
+                    <i class="fas fa-sign-in-alt text-primary me-2"></i>
+                    Sign In with Azure AD
+                </h3>
+                <p class="card-text text-muted mb-4">
+                    Click the button below to authenticate using your Azure Active Directory credentials.
+                    Your group memberships will be automatically mapped to custom attributes in Amazon Cognito.
+                </p>
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                    <i class="fab fa-microsoft me-2"></i>
+                    Sign In with Azure AD
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <!-- Welcome Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-center py-5">
+                <h3 class="card-title mb-4">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    Welcome, {{ session.get('user_attributes', {}).get('display_name', 'User') }}!
+                </h3>
+                <p class="card-text text-muted mb-4">
+                    You are successfully authenticated. Access your dashboard to view your profile information and group memberships.
+                </p>
+                <div class="d-grid gap-2 d-md-block">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Go to Dashboard
+                    </a>
+                    <a href="{{ url_for('profile') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-user me-2"></i>
+                        View Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Features Section -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title">SAML 2.0 Authentication</h5>
+                        <p class="card-text text-muted">
+                            Secure authentication using SAML 2.0 protocol with Azure Active Directory as the identity provider.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-users fa-3x text-success"></i>
+                        </div>
+                        <h5 class="card-title">Group Claims Mapping</h5>
+                        <p class="card-text text-muted">
+                            Automatic mapping of Azure AD group claims to custom attributes in Amazon Cognito for fine-grained access control.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-cog fa-3x text-info"></i>
+                        </div>
+                        <h5 class="card-title">Session Management</h5>
+                        <p class="card-text text-muted">
+                            Robust session management with timeout handling and secure access control based on group memberships.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Details -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Technical Implementation
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Authentication Flow</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>SAML 2.0 SSO with Azure AD</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Assertion validation and processing</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Group claims extraction</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Secure session establishment</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Cognito Integration</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>User creation/update in Cognito</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Custom attribute mapping</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Group-based access control</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Attribute synchronization</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

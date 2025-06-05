@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - SAML Azure AD Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-user text-primary me-2"></i>
+                User Profile
+            </h1>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>
+                Back to Dashboard
+            </a>
+        </div>
+
+        {% set user = session.get('user_attributes', {}) %}
+        
+        <!-- Profile Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-id-card me-2"></i>
+                    Profile Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-4">
+                        <div class="profile-avatar mb-3">
+                            <i class="fas fa-user-circle fa-8x text-muted"></i>
+                        </div>
+                        <h4 class="mb-1">{{ user.get('display_name', 'Unknown User') }}</h4>
+                        <p class="text-muted">{{ user.get('email', 'No email') }}</p>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label text-muted">First Name</label>
+                                <div class="form-control-plaintext fw-bold">
+                                    {{ user.get('first_name', 'N/A') }}
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label text-muted">Last Name</label>
+                                <div class="form-control-plaintext fw-bold">
+                                    {{ user.get('last_name', 'N/A') }}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted">Email Address</label>
+                                <div class="form-control-plaintext fw-bold">
+                                    <i class="fas fa-envelope text-muted me-2"></i>
+                                    {{ user.get('email', 'N/A') }}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted">SAML NameID</label>
+                                <div class="form-control-plaintext fw-bold text-break">
+                                    <i class="fas fa-fingerprint text-muted me-2"></i>
+                                    {{ user.get('nameid', 'N/A') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Group Memberships -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2"></i>
+                    Group Memberships
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set groups = user.get('groups', []) %}
+                {% if groups %}
+                <div class="mb-3">
+                    <span class="badge bg-primary fs-6">{{ groups|length }} group(s)</span>
+                </div>
+                <div class="row">
+                    {% for group in groups %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold">
+                                        <i class="fas fa-users text-success me-2"></i>
+                                        {{ group }}
+                                    </span>
+                                    <span class="badge bg-success">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-users fa-4x mb-3"></i>
+                    <h5>No Group Memberships</h5>
+                    <p>This user is not a member of any groups.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Cognito Integration Status -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fab fa-aws me-2"></i>
+                    Cognito Integration Status
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if cognito_user %}
+                <div class="alert alert-success" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Successfully synchronized with Amazon Cognito</strong>
+                    <br>
+                    <small class="text-muted">User attributes and group mappings have been updated in Cognito User Pool.</small>
+                </div>
+                
+                <h6 class="text-info mb-3">Cognito Attributes</h6>
+                <div class="row g-3">
+                    {% for key, value in cognito_user.items() %}
+                    {% if not key.startswith('_') %}
+                    <div class="col-sm-6">
+                        <label class="form-label text-muted">{{ key|title|replace('_', ' ') }}</label>
+                        <div class="form-control-plaintext">
+                            {% if key == 'saml_groups' %}
+                                {% set groups_list = value|from_json if value else [] %}
+                                {% for group in groups_list %}
+                                    <span class="badge bg-secondary me-1">{{ group }}</span>
+                                {% endfor %}
+                            {% else %}
+                                {{ value }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Cognito integration not configured or failed</strong>
+                    <br>
+                    <small class="text-muted">User data has not been synchronized with Amazon Cognito.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Raw SAML Attributes -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-code me-2"></i>
+                    Raw SAML Attributes
+                    <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#rawAttributes">
+                        <i class="fas fa-eye me-1"></i>
+                        Show/Hide
+                    </button>
+                </h5>
+            </div>
+            <div class="collapse" id="rawAttributes">
+                <div class="card-body">
+                    {% set raw_attrs = user.get('raw_attributes', {}) %}
+                    {% if raw_attrs %}
+                    <pre class="bg-light p-3 rounded"><code>{{ raw_attrs|tojson(indent=2) }}</code></pre>
+                    {% else %}
+                    <p class="text-muted">No raw attributes available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Add syntax highlighting for JSON
+document.addEventListener('DOMContentLoaded', function() {
+    const codeBlocks = document.querySelectorAll('pre code');
+    codeBlocks.forEach(function(block) {
+        // Simple JSON syntax highlighting
+        let content = block.textContent;
+        content = content.replace(/"([^"]+)":/g, '<span class="text-primary">"$1":</span>');
+        content = content.replace(/: "([^"]+)"/g, ': <span class="text-success">"$1"</span>');
+        content = content.replace(/: (\d+)/g, ': <span class="text-info">$1</span>');
+        content = content.replace(/: (true|false)/g, ': <span class="text-warning">$1</span>');
+        block.innerHTML = content;
+    });
+});
+</script>
+{% endblock %}

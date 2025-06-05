@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Session Information - SAML Azure AD Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                Session Information
+            </h1>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>
+                Back to Dashboard
+            </a>
+        </div>
+
+        {% set session_info = get_session_info() %}
+        
+        <!-- Session Status -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-heartbeat me-2"></i>
+                    Session Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label text-muted">Authentication Status</label>
+                        <div class="fw-bold">
+                            {% if session_info.get('authenticated') %}
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Authenticated
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger fs-6">
+                                <i class="fas fa-times-circle me-1"></i>
+                                Not Authenticated
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted">Session Timeout</label>
+                        <div class="fw-bold">{{ session_info.get('session_timeout', 0) // 60 }} minutes</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted">Time Remaining</label>
+                        <div class="fw-bold" id="time-remaining">
+                            {{ (session_info.get('time_remaining', 0) // 60) }} minutes
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted">Last Activity</label>
+                        <div class="fw-bold">
+                            {% if session_info.get('last_activity') %}
+                            <span id="last-activity">{{ moment(session_info.get('last_activity')).fromNow() }}</span>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Session Timeout Progress Bar -->
+                {% if session_info.get('authenticated') %}
+                <div class="mt-3">
+                    <label class="form-label text-muted">Session Progress</label>
+                    {% set progress = (session_info.get('time_remaining', 0) / session_info.get('session_timeout', 1)) * 100 %}
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar {% if progress > 50 %}bg-success{% elif progress > 25 %}bg-warning{% else %}bg-danger{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ progress }}%"
+                             id="session-progress">
+                        </div>
+                    </div>
+                    <small class="text-muted">Session will expire when the progress bar reaches zero</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- SAML Details -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    SAML Authentication Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">NameID</label>
+                        <div class="form-control-plaintext fw-bold text-break">
+                            {{ session_info.get('nameid', 'N/A') }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">NameID Format</label>
+                        <div class="form-control-plaintext fw-bold text-break">
+                            {{ session.get('saml_nameid_format', 'N/A') }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Session Index</label>
+                        <div class="form-control-plaintext fw-bold text-break">
+                            {{ session_info.get('session_index', 'N/A') }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Authentication Method</label>
+                        <div class="form-control-plaintext fw-bold">
+                            SAML 2.0 SSO
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Information Summary -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2"></i>
+                    User Information Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set user_info = session_info.get('user_info', {}) %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Display Name</label>
+                        <div class="fw-bold">{{ user_info.get('display_name', 'N/A') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Email</label>
+                        <div class="fw-bold">{{ user_info.get('email', 'N/A') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">First Name</label>
+                        <div class="fw-bold">{{ user_info.get('first_name', 'N/A') }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted">Last Name</label>
+                        <div class="fw-bold">{{ user_info.get('last_name', 'N/A') }}</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted">Groups</label>
+                        <div>
+                            {% set groups = session_info.get('groups', []) %}
+                            {% if groups %}
+                                {% for group in groups %}
+                                <span class="badge bg-primary me-1">{{ group }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">No groups</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Data -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>
+                    Session Data
+                    <button class="btn btn-sm btn-outline-dark float-end" type="button" data-bs-toggle="collapse" data-bs-target="#sessionData">
+                        <i class="fas fa-eye me-1"></i>
+                        Show/Hide
+                    </button>
+                </h5>
+            </div>
+            <div class="collapse" id="sessionData">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Key</th>
+                                    <th>Value</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key, value in session.items() %}
+                                <tr>
+                                    <td><code>{{ key }}</code></td>
+                                    <td class="text-break">
+                                        {% if value is mapping %}
+                                            <details>
+                                                <summary>Object ({{ value|length }} items)</summary>
+                                                <pre class="mt-2"><code>{{ value|tojson(indent=2) }}</code></pre>
+                                            </details>
+                                        {% elif value is iterable and value is not string %}
+                                            <details>
+                                                <summary>Array ({{ value|length }} items)</summary>
+                                                <pre class="mt-2"><code>{{ value|tojson(indent=2) }}</code></pre>
+                                            </details>
+                                        {% else %}
+                                            {{ value }}
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-secondary">{{ value.__class__.__name__ }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Actions -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    Session Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-primary w-100" onclick="refreshSessionInfo()">
+                            <i class="fas fa-sync-alt me-2"></i>
+                            Refresh Info
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-info w-100" onclick="extendSession()">
+                            <i class="fas fa-clock me-2"></i>
+                            Extend Session
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('profile') }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-user me-2"></i>
+                            View Profile
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let sessionTimeout = {{ session_info.get('session_timeout', 3600) }};
+let timeRemaining = {{ session_info.get('time_remaining', 0) }};
+
+function updateSessionTimer() {
+    if (timeRemaining > 0) {
+        timeRemaining--;
+        
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        
+        document.getElementById('time-remaining').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Update progress bar
+        const progress = (timeRemaining / sessionTimeout) * 100;
+        const progressBar = document.getElementById('session-progress');
+        if (progressBar) {
+            progressBar.style.width = progress + '%';
+            
+            // Change color based on remaining time
+            progressBar.className = 'progress-bar ';
+            if (progress > 50) {
+                progressBar.className += 'bg-success';
+            } else if (progress > 25) {
+                progressBar.className += 'bg-warning';
+            } else {
+                progressBar.className += 'bg-danger';
+            }
+        }
+        
+        // Show warning when session is about to expire
+        if (timeRemaining <= 300 && timeRemaining % 60 === 0) { // Every minute in last 5 minutes
+            showAlert(`Session will expire in ${minutes} minute(s)!`, 'warning');
+        }
+        
+        if (timeRemaining <= 0) {
+            showAlert('Session has expired! You will be redirected to login.', 'danger');
+            setTimeout(() => {
+                window.location.href = '{{ url_for("login") }}';
+            }, 3000);
+        }
+    }
+}
+
+function refreshSessionInfo() {
+    window.location.reload();
+}
+
+function extendSession() {
+    // Make a request to extend the session
+    fetch('{{ url_for("session_info") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({action: 'extend'})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            timeRemaining = data.time_remaining;
+            showAlert('Session extended successfully!', 'success');
+        } else {
+            showAlert('Failed to extend session.', 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error extending session.', 'danger');
+    });
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Update timer every second
+setInterval(updateSessionTimer, 1000);
+
+// Update last activity display every minute
+setInterval(() => {
+    const lastActivityElement = document.getElementById('last-activity');
+    if (lastActivityElement) {
+        // This would need to be updated with actual timestamp calculation
+        // For now, just refresh the page data periodically
+    }
+}, 60000);
+</script>
+{% endblock %}
